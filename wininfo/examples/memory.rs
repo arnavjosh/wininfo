@@ -1,21 +1,11 @@
 use wmr::memory;
 
-fn main() {
-    //TODO: make constants and stuff for byte conversions (create a constatns file like in go projdefcts?)
-    match memory() {
-        Ok(mem) => {
-            println!("{:#?}", mem);
-            println!(
-                "Total: {:.2} GB",
-                mem.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0
-            );
-            println!(
-                "Available: {:.2} GB",
-                mem.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0
-            );
-            println!("Usage: {:.1}%", mem.usage_percent);
-        }
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mem = memory()?;
 
-        Err(e) => println!("{e}"),
-    }
+    println!("Total: {:.2} GiB", mem.total_gib());
+    println!("Available: {:.2} GiB", mem.available_gib());
+    println!("Used: {:.2} GiB", mem.used_gib());
+
+    Ok(())
 }
