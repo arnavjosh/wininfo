@@ -1,11 +1,18 @@
+use byte_unit::Unit;
 use wmr::System;
 
 fn main() -> Result<(), wmr::WmrError> {
     let system = System::new()?;
 
     let memory = system.memory()?;
-    println!("Total:     {:.2} GiB", memory.total_gib());
-    println!("Available: {:.2} GiB", memory.available_gib());
+    println!(
+        "Total:     {:.2}",
+        memory.total().get_adjusted_unit(Unit::GiB)
+    );
+    println!(
+        "Free: {:.2} GiB",
+        memory.free().get_adjusted_unit(Unit::GiB)
+    );
     let cpu = system.cpu()?;
     println!();
     println!("=== CPU ===");

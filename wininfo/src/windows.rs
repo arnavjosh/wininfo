@@ -1,3 +1,4 @@
+use byte_unit::Byte;
 use serde::Deserialize;
 use wmi::WMIConnection;
 
@@ -39,10 +40,10 @@ pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo> {
     let os = result.first().ok_or(WmrError::Empty)?;
 
     // WMI reports these values in KiB
-    let total = os.total_visible_memory_size * 1024;
-    let available = os.free_physical_memory * 1024;
+    let total = Byte::from_u64(os.total_visible_memory_size * 1024);
+    let free = Byte::from_u64(os.free_physical_memory * 1024);
 
-    Ok(MemoryInfo::new(total, available))
+    Ok(MemoryInfo::new(total, free))
 }
 
 pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo> {

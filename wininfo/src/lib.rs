@@ -17,6 +17,7 @@ mod system;
 #[cfg(windows)]
 mod windows;
 
+pub use byte_unit::Byte;
 pub use cpu::CpuInfo;
 pub use disk::DiskInfo;
 pub use error::WmrError;

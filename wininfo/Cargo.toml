@@ -8,6 +8,7 @@ description = "Simple Windows system information library"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+byte-unit = {version = "5", features = ["serde"]}
 
 [target.'cfg(windows)'.dependencies]
 wmi = "0.15"
