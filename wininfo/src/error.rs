@@ -1,16 +1,17 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum WmrError {
     #[cfg(windows)]
-    #[error("WMI error")]
+    #[error("WMI error: {0}")]
     Wmi(#[from] wmi::WMIError),
-    #[error("COM initialization problemo")]
+
+    #[error("COM initialization failed")]
     Com,
 
-    #[error("Didnt get results bruh.")]
+    #[error("No results returned from WMI")]
     Empty,
 
-    #[error("platform wont work")]
+    #[error("Unsupported platform")]
     Unsupported,
 }
