@@ -1,7 +1,7 @@
 use serde::Deserialize;
-use wmi::{COMLibrary, WMIConnection};
+use wmi::WMIConnection;
 
-use crate::{error::WmrError, memory::MemoryInfo};
+use crate::{cpu::CpuInfo, error::WmrError, memory::MemoryInfo};
 
 #[derive(Debug, Deserialize)]
 struct Win32OperatingSystem {
@@ -12,19 +12,59 @@ struct Win32OperatingSystem {
     free_physical_memory: u64,
 }
 
-pub(crate) fn memory() -> Result<MemoryInfo, WmrError> {
-    let com = COMLibrary::new().map_err(|_| WmrError::Com)?;
-    let wmi = WMIConnection::new(com)?;
+#[derive(Debug, Deserialize)]
+struct Win32Processor {
+    #[serde(rename = "Name")]
+    name: Option<String>,
 
+    #[serde(rename = "Manufacturer")]
+    manufacturer: Option<String>,
+
+    #[serde(rename = "NumberOfCores")]
+    number_of_cores: Option<u32>,
+
+    #[serde(rename = "NumberOfLogicalProcessors")]
+    number_of_logical_processors: Option<u32>,
+
+    #[serde(rename = "MaxClockSpeed")]
+    max_clock_speed: Option<u64>,
+}
+
+pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo, WmrError> {
     let result: Vec<Win32OperatingSystem> = wmi.raw_query(
-        "SELECT TotalVisibleMemorySize, FreePhysicalMemory FROM Win32_OperatingSystem",
+        "SELECT TotalVisibleMemorySize, FreePhysicalMemory \
+         FROM Win32_OperatingSystem",
     )?;
 
     let os = result.first().ok_or(WmrError::Empty)?;
 
-    // WMI reports memory values in KiB
+    // WMI reports these values in KiB
     let total = os.total_visible_memory_size * 1024;
     let available = os.free_physical_memory * 1024;
 
     Ok(MemoryInfo::new(total, available))
+}
+
+pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo, WmrError> {
+    let result: Vec<Win32Processor> = wmi.raw_query(
+        "SELECT Name, Manufacturer, NumberOfCores, \
+         NumberOfLogicalProcessors, MaxClockSpeed \
+         FROM Win32_Processor",
+    )?;
+
+    let processor = result.first().ok_or(WmrError::Empty)?;
+
+    Ok(CpuInfo::new(
+        processor
+            .name
+            .clone()
+            .unwrap_or_else(|| "Unknown".to_string()),
+        processor
+            .manufacturer
+            .clone()
+            .unwrap_or_else(|| "Unknown".to_string()),
+        processor.number_of_cores,
+        processor.number_of_logical_processors,
+        processor.max_clock_speed,
+    ))
 }
