@@ -20,5 +20,8 @@ fn main() -> Result<(), wmr::WmrError> {
     if let Some(speed) = cpu.max_clock_speed_ghz() {
         println!("Max clock speed: {:.2} GHz", speed);
     }
+
+    let disk = system.disk()?;
+    println!("{:?}", disk);
     Ok(())
 }

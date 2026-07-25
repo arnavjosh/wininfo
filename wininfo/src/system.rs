@@ -1,7 +1,7 @@
 #[cfg(windows)]
 use wmi::{COMLibrary, WMIConnection};
 
-use crate::{cpu::CpuInfo, error::WmrError, memory::MemoryInfo};
+use crate::{cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
 
 pub struct System {
     #[cfg(windows)]
@@ -41,6 +41,18 @@ impl System {
         #[cfg(windows)]
         {
             crate::windows::cpu(&self.wmi)
+        }
+
+        #[cfg(not(windows))]
+        {
+            Err(WmrError::Unsupported)
+        }
+    }
+
+    pub fn disk(&self) -> Result<DiskInfo, WmrError> {
+        #[cfg(windows)]
+        {
+            crate::windows::disk(&self.wmi)
         }
 
         #[cfg(not(windows))]

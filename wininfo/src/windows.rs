@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use wmi::WMIConnection;
 
-use crate::{cpu::CpuInfo, error::WmrError, memory::MemoryInfo};
+use crate::{cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
 
 #[derive(Debug, Deserialize)]
 struct Win32OperatingSystem {
@@ -66,5 +66,34 @@ pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo, WmrError> {
         processor.number_of_cores,
         processor.number_of_logical_processors,
         processor.max_clock_speed,
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+struct Win32LogicalDisk {
+    #[serde(rename = "DeviceID")]
+    device_id: Option<String>,
+
+    #[serde(rename = "Size")]
+    size: Option<u64>,
+
+    #[serde(rename = "FreeSpace")]
+    free_space: Option<u64>,
+}
+
+pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo, WmrError> {
+    let result: Vec<Win32LogicalDisk> = wmi.raw_query(
+        "SELECT DeviceID, Size, FreeSpace \
+         FROM Win32_LogicalDisk",
+    )?;
+
+    let disk = result.first().ok_or(WmrError::Empty)?;
+
+    Ok(DiskInfo::new(
+        disk.device_id
+            .clone()
+            .unwrap_or_else(|| "Unknown".to_string()),
+        disk.size,
+        disk.free_space,
     ))
 }
