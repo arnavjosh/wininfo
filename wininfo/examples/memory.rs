@@ -6,7 +6,6 @@ fn main() -> Result<(), wmr::WmrError> {
     let memory = system.memory()?;
     println!("Total:     {:.2} GiB", memory.total_gib());
     println!("Available: {:.2} GiB", memory.available_gib());
-    println!("Used:      {:.2} GiB", memory.used_gib());
     let cpu = system.cpu()?;
     println!();
     println!("=== CPU ===");
