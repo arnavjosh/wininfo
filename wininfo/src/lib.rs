@@ -22,3 +22,5 @@ pub use disk::DiskInfo;
 pub use error::WmrError;
 pub use memory::MemoryInfo;
 pub use system::System;
+
+pub type Result<T> = std::result::Result<T, WmrError>;

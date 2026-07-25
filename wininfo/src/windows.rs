@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use wmi::WMIConnection;
 
-use crate::{cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
+use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
 
 #[derive(Debug, Deserialize)]
 struct Win32OperatingSystem {
@@ -30,7 +30,7 @@ struct Win32Processor {
     max_clock_speed: Option<u64>,
 }
 
-pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo, WmrError> {
+pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo> {
     let result: Vec<Win32OperatingSystem> = wmi.raw_query(
         "SELECT TotalVisibleMemorySize, FreePhysicalMemory \
          FROM Win32_OperatingSystem",
@@ -45,7 +45,7 @@ pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo, WmrError> {
     Ok(MemoryInfo::new(total, available))
 }
 
-pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo, WmrError> {
+pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo> {
     let result: Vec<Win32Processor> = wmi.raw_query(
         "SELECT Name, Manufacturer, NumberOfCores, \
          NumberOfLogicalProcessors, MaxClockSpeed \
@@ -81,7 +81,7 @@ struct Win32LogicalDisk {
     free_space: Option<u64>,
 }
 
-pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo, WmrError> {
+pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo> {
     let result: Vec<Win32LogicalDisk> = wmi.raw_query(
         "SELECT DeviceID, Size, FreeSpace \
          FROM Win32_LogicalDisk",
