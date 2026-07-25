@@ -5,24 +5,16 @@ pub struct MemoryInfo {
     total_bytes: u64,
     available_bytes: u64,
     used_bytes: u64,
-    usage_percent: f32,
 }
 
 impl MemoryInfo {
     pub(crate) fn new(total_bytes: u64, available_bytes: u64) -> Self {
         let used_bytes = total_bytes.saturating_sub(available_bytes);
 
-        let usage_percent = if total_bytes == 0 {
-            0.0
-        } else {
-            used_bytes as f32 / total_bytes as f32 * 100.0
-        };
-
         Self {
             total_bytes,
             available_bytes,
             used_bytes,
-            usage_percent,
         }
     }
     pub fn total_bytes(&self) -> u64 {
