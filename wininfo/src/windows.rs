@@ -1,5 +1,5 @@
 use byte_unit::Byte;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use wmi::WMIConnection;
 
 use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
@@ -70,7 +70,7 @@ pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo> {
     ))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct Win32LogicalDisk {
     #[serde(rename = "DeviceID")]
     device_id: Option<String>,
@@ -79,7 +79,7 @@ struct Win32LogicalDisk {
     size: Option<u64>,
 
     #[serde(rename = "FreeSpace")]
-    free_space: Option<u64>,
+    free: Option<u64>,
 }
 
 pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo> {
@@ -87,14 +87,16 @@ pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo> {
         "SELECT DeviceID, Size, FreeSpace \
          FROM Win32_LogicalDisk",
     )?;
+    println!("Ran query, size: {:?}", result.len());
 
     let disk = result.first().ok_or(WmrError::Empty)?;
+    println!("{:?}", disk);
 
     Ok(DiskInfo::new(
         disk.device_id
             .clone()
             .unwrap_or_else(|| "Unknown".to_string()),
-        disk.size,
-        disk.free_space,
+        disk.size.map(Byte::from_u64),
+        disk.free.map(Byte::from_u64),
     ))
 }

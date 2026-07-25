@@ -1,4 +1,4 @@
-use byte_unit::Unit;
+use byte_unit::{Byte, Unit};
 use wmr::System;
 
 fn main() -> Result<(), wmr::WmrError> {
@@ -29,6 +29,18 @@ fn main() -> Result<(), wmr::WmrError> {
     }
 
     let disk = system.disk()?;
-    println!("{:?}", disk);
+    //println!("Name: {}", disk.device_id());
+    println!(
+        "Size: {:.2}",
+        disk.size()
+            .unwrap_or(Byte::from_u64(0))
+            .get_adjusted_unit(Unit::GiB)
+    );
+    println!(
+        "Free: {:.2}",
+        disk.free()
+            .unwrap_or(Byte::from_u64(0))
+            .get_adjusted_unit(Unit::GiB)
+    );
     Ok(())
 }
