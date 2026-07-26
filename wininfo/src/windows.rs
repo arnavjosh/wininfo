@@ -87,12 +87,10 @@ pub(crate) fn disk(wmi: &WMIConnection) -> Result<Vec<DiskInfo>> {
         "SELECT DeviceID, Size, FreeSpace \
          FROM Win32_LogicalDisk",
     )?;
-    println!("Ran query, size: {:?}", result.len());
 
     let mut all_disks: Vec<DiskInfo> = Vec::with_capacity(result.len());
 
     for disk in &result {
-        println!("{:?}", disk);
         let info = DiskInfo::new(
             disk.device_id
                 .clone()
