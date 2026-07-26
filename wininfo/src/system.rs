@@ -10,7 +10,7 @@ pub struct System {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Info {
-    pub disk: DiskInfo,
+    pub disks: Vec<DiskInfo>,
     pub cpu: CpuInfo,
     pub memory: MemoryInfo,
 }
@@ -56,7 +56,7 @@ impl System {
         }
     }
 
-    pub fn disk(&self) -> Result<DiskInfo> {
+    pub fn disk(&self) -> Result<Vec<DiskInfo>> {
         #[cfg(windows)]
         {
             crate::windows::disk(&self.wmi)
@@ -70,7 +70,7 @@ impl System {
 
     pub fn info(&self) -> Result<Info> {
         Ok(Info {
-            disk: self.disk()?,
+            disks: self.disk()?,
             cpu: self.cpu()?,
             memory: self.memory()?,
         })

@@ -40,19 +40,21 @@ fn main() -> Result<(), wmr::WmrError> {
         println!("Max clock speed: {:.2} GHz", speed);
     }
 
-    let disk = system.disk()?;
+    let disks = system.disk()?;
     //println!("Name: {}", disk.device_id());
-    println!(
-        "Size: {:.2}",
-        disk.size()
-            .unwrap_or(Byte::from_u64(0))
-            .get_adjusted_unit(Unit::GiB)
-    );
-    println!(
-        "Free: {:.2}",
-        disk.free()
-            .unwrap_or(Byte::from_u64(0))
-            .get_adjusted_unit(Unit::GiB)
-    );
+    for d in disks {
+        println!(
+            "Size: {:.2}",
+            d.size()
+                .unwrap_or(Byte::from_u64(0))
+                .get_adjusted_unit(Unit::GiB)
+        );
+        println!(
+            "Free: {:.2}",
+            d.free()
+                .unwrap_or(Byte::from_u64(0))
+                .get_adjusted_unit(Unit::GiB)
+        );
+    }
     Ok(())
 }

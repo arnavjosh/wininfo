@@ -82,21 +82,26 @@ struct Win32LogicalDisk {
     free: Option<u64>,
 }
 
-pub(crate) fn disk(wmi: &WMIConnection) -> Result<DiskInfo> {
+pub(crate) fn disk(wmi: &WMIConnection) -> Result<Vec<DiskInfo>> {
     let result: Vec<Win32LogicalDisk> = wmi.raw_query(
         "SELECT DeviceID, Size, FreeSpace \
          FROM Win32_LogicalDisk",
     )?;
     println!("Ran query, size: {:?}", result.len());
 
-    let disk = result.first().ok_or(WmrError::Empty)?;
-    println!("{:?}", disk);
+    let mut all_disks: Vec<DiskInfo> = Vec::with_capacity(result.len());
 
-    Ok(DiskInfo::new(
-        disk.device_id
-            .clone()
-            .unwrap_or_else(|| "Unknown".to_string()),
-        disk.size.map(Byte::from_u64),
-        disk.free.map(Byte::from_u64),
-    ))
+    for disk in &result {
+        println!("{:?}", disk);
+        let info = DiskInfo::new(
+            disk.device_id
+                .clone()
+                .unwrap_or_else(|| "Unknown".to_string()),
+            disk.size.map(Byte::from_u64),
+            disk.free.map(Byte::from_u64),
+        );
+        all_disks.push(info);
+    }
+
+    Ok(all_disks)
 }
