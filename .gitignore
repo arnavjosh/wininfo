@@ -1,2 +1,2 @@
-/wininfo/target/
-/wininfo/Cargo.lock
+/target/
+/Cargo.lock
