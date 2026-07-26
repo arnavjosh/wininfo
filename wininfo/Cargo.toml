@@ -5,6 +5,13 @@ edition = "2024"
 license = "MIT"
 description = "Simple Windows system information library"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "wininfo_cli"
+path = "src/bin/wininfo_cli/main.rs"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
