@@ -4,6 +4,8 @@ use wmr::System;
 fn main() -> Result<(), wmr::WmrError> {
     let system = System::new()?;
 
+    let info = system.info()?;
+    println!("{:?}", info);
     let memory = system.memory()?;
     println!(
         "Total:     {:.2}",

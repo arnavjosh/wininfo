@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use wmi::{COMLibrary, WMIConnection};
 
@@ -6,6 +7,12 @@ use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::Memor
 pub struct System {
     #[cfg(windows)]
     wmi: WMIConnection,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Info {
+    pub disk: DiskInfo,
+    pub cpu: CpuInfo,
+    pub memory: MemoryInfo,
 }
 
 impl System {
@@ -59,5 +66,13 @@ impl System {
         {
             Err(WmrError::Unsupported)
         }
+    }
+
+    pub fn info(&self) -> Result<Info> {
+        Ok(Info {
+            disk: self.disk()?,
+            cpu: self.cpu()?,
+            memory: self.memory()?,
+        })
     }
 }
