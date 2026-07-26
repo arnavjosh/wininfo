@@ -1,9 +1,10 @@
 [package]
-name = "wmr"
+name = "wininfo"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Simple Windows system information library"
+description = "Simple Windows system information library and CLI"
+author = "Arnav Josh"
 
 [features]
 cli = ["dep:clap", "dep:miette"]

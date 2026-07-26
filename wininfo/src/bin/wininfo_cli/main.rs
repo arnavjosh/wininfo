@@ -11,7 +11,7 @@
 #[cfg(feature = "cli")]
 use clap::{Parser, Subcommand};
 use std::error::Error;
-use wmr::System;
+use wininfo::System;
 
 #[cfg(feature = "cli")]
 #[derive(Parser)]
@@ -19,7 +19,9 @@ use wmr::System;
 #[command(version)]
 // The \x1B[4m and \x1B[0m are ANSI escape codes to underline the text and to reset formatting
 #[command(after_help = "\x1B[4mExamples:\x1B[0m\n\
-    # Print memory information\n\
+    # Print all system information\n\
+    wininfo_cli\n\
+    # Print only memory information\n\
     wininfo_cli memory\n")]
 struct Cli {
     // Then subcommands
@@ -30,8 +32,11 @@ struct Cli {
 #[cfg(feature = "cli")]
 #[derive(Subcommand)]
 enum Commands {
+    /// print system memory info.
     Memory {},
+    /// print system CPU info.
     Cpu {},
+    /// print system disk info.
     Disks {},
 }
 
