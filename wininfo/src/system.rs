@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use wmi::{COMLibrary, WMIConnection};
 
-use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
+use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo};
 
 pub struct System {
     #[cfg(windows)]
@@ -20,7 +20,7 @@ impl System {
     pub fn new() -> Result<Self> {
         #[cfg(windows)]
         {
-            let com = COMLibrary::new().map_err(|_| WmrError::Com)?;
+            let com = COMLibrary::new().map_err(|_| WinInfoError::Com)?;
             let wmi = WMIConnection::new(com)?;
 
             Ok(Self { wmi })
@@ -28,7 +28,7 @@ impl System {
 
         #[cfg(not(windows))]
         {
-            Err(WmrError::Unsupported)
+            Err(WinInfoError::Unsupported)
         }
     }
 
@@ -40,7 +40,7 @@ impl System {
 
         #[cfg(not(windows))]
         {
-            Err(WmrError::Unsupported)
+            Err(WinInfoError::Unsupported)
         }
     }
 
@@ -52,7 +52,7 @@ impl System {
 
         #[cfg(not(windows))]
         {
-            Err(WmrError::Unsupported)
+            Err(WinInfoError::Unsupported)
         }
     }
 
@@ -64,7 +64,7 @@ impl System {
 
         #[cfg(not(windows))]
         {
-            Err(WmrError::Unsupported)
+            Err(WinInfoError::Unsupported)
         }
     }
 

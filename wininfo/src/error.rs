@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum WmrError {
+pub enum WinInfoError {
     #[cfg(windows)]
     #[error("WMI error: {0}")]
     Wmi(#[from] wmi::WMIError),

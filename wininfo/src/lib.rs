@@ -20,8 +20,8 @@ mod windows;
 pub use byte_unit::Byte;
 pub use cpu::CpuInfo;
 pub use disk::DiskInfo;
-pub use error::WmrError;
+pub use error::WinInfoError;
 pub use memory::MemoryInfo;
 pub use system::System;
 
-pub type Result<T> = std::result::Result<T, WmrError>;
+pub type Result<T> = std::result::Result<T, WinInfoError>;

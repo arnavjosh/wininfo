@@ -2,7 +2,7 @@ use byte_unit::Byte;
 use serde::{Deserialize, Serialize};
 use wmi::WMIConnection;
 
-use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WmrError, memory::MemoryInfo};
+use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo};
 
 #[derive(Debug, Deserialize)]
 struct Win32OperatingSystem {
@@ -37,7 +37,7 @@ pub(crate) fn memory(wmi: &WMIConnection) -> Result<MemoryInfo> {
          FROM Win32_OperatingSystem",
     )?;
 
-    let os = result.first().ok_or(WmrError::Empty)?;
+    let os = result.first().ok_or(WinInfoError::Empty)?;
 
     // WMI reports these values in KiB
     let total = Byte::from_u64(os.total_visible_memory_size * 1024);
@@ -53,7 +53,7 @@ pub(crate) fn cpu(wmi: &WMIConnection) -> Result<CpuInfo> {
          FROM Win32_Processor",
     )?;
 
-    let processor = result.first().ok_or(WmrError::Empty)?;
+    let processor = result.first().ok_or(WinInfoError::Empty)?;
 
     Ok(CpuInfo::new(
         processor
