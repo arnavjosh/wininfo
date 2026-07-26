@@ -1,3 +1,13 @@
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::assertions_on_result_states
+    )
+)]
+
 use byte_unit::{Byte, Unit};
 use wmr::System;
 
