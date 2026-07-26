@@ -56,7 +56,7 @@ impl System {
         }
     }
 
-    pub fn disk(&self) -> Result<Vec<DiskInfo>> {
+    pub fn disks(&self) -> Result<Vec<DiskInfo>> {
         #[cfg(windows)]
         {
             crate::windows::disk(&self.wmi)
@@ -70,7 +70,7 @@ impl System {
 
     pub fn info(&self) -> Result<Info> {
         Ok(Info {
-            disks: self.disk()?,
+            disks: self.disks()?,
             cpu: self.cpu()?,
             memory: self.memory()?,
         })

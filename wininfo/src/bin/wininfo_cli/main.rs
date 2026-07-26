@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let out = match &cli.command {
         Some(Commands::Cpu {}) => serde_json::to_string_pretty(&system.cpu()?),
         Some(Commands::Memory {}) => serde_json::to_string_pretty(&system.memory()?),
-        Some(Commands::Disks {}) => serde_json::to_string_pretty(&system.disk()?),
+        Some(Commands::Disks {}) => serde_json::to_string_pretty(&system.disks()?),
         None => serde_json::to_string_pretty(&system.info()?),
     }?;
     println!("{:}", out);
