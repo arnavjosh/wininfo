@@ -10,12 +10,7 @@
 use byte_unit::Byte;
 use clap::{ArgGroup, Parser, Subcommand};
 use serde_json::{Map, Value};
-use std::{
-    error::Error,
-    io::{self, Write},
-    thread,
-    time::Duration,
-};
+use std::error::Error;
 use wininfo::System;
 
 type CliResult<T> = std::result::Result<T, Box<dyn Error>>;
@@ -58,10 +53,6 @@ struct Cli {
     #[arg(short = 'q', long)]
     quiet: bool,
 
-    /// Refresh the output every N seconds
-    #[arg(long, value_name = "SECONDS")]
-    watch: Option<u64>,
-
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -83,17 +74,6 @@ fn main() -> CliResult<()> {
     let cli = Cli::parse();
 
     let system = System::new()?;
-
-    if let Some(interval) = cli.watch {
-        if interval == 0 {
-            return Err("--watch interval must be greater than zero".into());
-        }
-        if cli.json {
-            //can't make a properly updating system if it's a json print
-            return Err("--watch cannot be combined with --json".into());
-        }
-        return watch(&system, &cli, interval);
-    }
 
     run_once(&system, &cli)
 }
@@ -309,20 +289,6 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
     println!("{json}");
 
     Ok(())
-}
-
-fn watch(system: &System, cli: &Cli, interval: u64) -> CliResult<()> {
-    loop {
-        print!("\x1B[2J\x1B[H");
-        io::stdout().flush()?;
-
-        run_once(system, cli)?;
-
-        println!();
-        println!("Refreshing every {interval}s · Press Ctrl+C to exit");
-
-        thread::sleep(Duration::from_secs(interval));
-    }
 }
 
 fn percentage(value: Byte, total: Byte) -> f64 {
