@@ -1,17 +1,18 @@
+
 # wininfo
 
-`wininfo` is a small Windows system information library and CLI. It uses WMI to collect CPU, memory, and disk data and exposes the results as Rust types or pretty-printed JSON.
+`wininfo` is a Windows system information library for Rust. It exposes a small API for collecting CPU, memory, and disk data through WMI and returns the results as strongly typed Rust structures.
 
 ## Features
 
-- Library API for querying system information from Windows.
-- CLI that prints system, CPU, memory, or disk information.
-- Serde support for serializing the returned data structures.
-- MIT licensed.
+- Query CPU, memory, and disk information from Windows.
+- Collect a complete system snapshot with one call.
+- Serialize the returned data with `serde`.
+- Use the library directly or build on the included CLI binary.
 
 ## Platform Support
 
-This crate is Windows-only at runtime. Creating a `System` on non-Windows platforms returns `WinInfoError::Unsupported`.
+`wininfo` is Windows-only at runtime. Creating a `System` on a non-Windows platform returns `WinInfoError::Unsupported`.
 
 ## Installation
 
@@ -22,9 +23,36 @@ Add the crate to your project:
 wininfo = "0.1"
 ```
 
-The CLI is enabled by default through the `cli` feature.
+By default, the crate enables the `cli` feature. If you only want the library API, disable default features:
 
-## Library Usage
+```toml
+[dependencies]
+wininfo = { version = "0.1", default-features = false }
+```
+
+## Library Overview
+
+The main entry point is `wininfo::System`.
+
+It provides:
+
+- `System::new()` to create a system provider.
+- `system.cpu()?` to query CPU information.
+- `system.memory()?` to query memory information.
+- `system.disks()?` to query disk information.
+- `system.info()?` to collect a full snapshot.
+
+The crate also exports:
+
+- `CpuInfo`
+- `MemoryInfo`
+- `DiskInfo`
+- `Info`
+- `Byte`
+- `Result<T>`
+- `WinInfoError`
+
+## Example
 
 ```rust
 use wininfo::System;
@@ -56,43 +84,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-The main entry point is `System::new()`, which gives access to:
+## Data Types
 
-- `system.cpu()?`
-- `system.memory()?`
-- `system.disks()?`
-- `system.info()?`
+`CpuInfo` exposes the CPU name, manufacturer, physical core count, logical core count, and maximum clock speed in MHz. It also provides `max_clock_speed_ghz()` for a GHz view.
 
-## CLI Usage
+`MemoryInfo` exposes total and free memory as `Byte` values.
 
-Run the CLI with Cargo:
+`DiskInfo` exposes the device ID plus optional size and free-space values.
+
+`Info` groups `cpu`, `memory`, and `disks` into one snapshot.
+
+## CLI
+
+The crate includes a `wininfo_cli` binary for terminal use. Run it with Cargo:
 
 ```bash
 cargo run --bin wininfo_cli
 ```
 
-Available subcommands:
+You can use either top-level selectors or subcommands:
 
 - `wininfo_cli` prints a full system snapshot.
-- `wininfo_cli cpu` prints CPU information.
-- `wininfo_cli memory` prints memory information.
-- `wininfo_cli disks` prints disk information.
+- `wininfo_cli --cpu`, `--memory`, `--disks`, and `--all` select specific sections.
+- `wininfo_cli cpu`, `memory`, `disks`, and `info` provide the same data through subcommands.
+- `wininfo_cli --json` prints structured JSON.
+- `wininfo_cli --quiet` suppresses section headers and extra spacing.
 
 Examples:
 
 ```bash
-cargo run --bin wininfo_cli -- cpu
+cargo run --bin wininfo_cli -- --cpu
 cargo run --bin wininfo_cli -- memory
-cargo run --bin wininfo_cli -- disks
+cargo run --bin wininfo_cli -- --all --json
 ```
 
-The CLI prints formatted JSON to standard output.
-
-## Data Types
-
-- `CpuInfo` includes the CPU name, manufacturer, physical cores, logical cores, and maximum clock speed.
-- `MemoryInfo` includes total and free memory.
-- `DiskInfo` includes the device ID plus optional size and free-space values.
+The CLI is intentionally plain-text only and no longer supports refresh or colorized output.
 
 ## License
 
