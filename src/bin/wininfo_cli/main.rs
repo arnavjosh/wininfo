@@ -325,10 +325,6 @@ fn watch(system: &System, cli: &Cli, interval: u64) -> CliResult<()> {
     }
 }
 
-fn format_byte(byte: Byte) -> String {
-    format!("{byte:#.2}")
-}
-
 fn percentage(value: Byte, total: Byte) -> f64 {
     let total_bytes = total.as_u64();
 
