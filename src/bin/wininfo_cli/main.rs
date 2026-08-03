@@ -40,7 +40,7 @@ struct Cli {
     /// Display disk information
     #[arg(short = 'd', long)]
     disks: bool,
-    #[arg(long, value_name = "INDEX")]
+    #[arg(long, value_name = "INDEX", conflicts_with = "disks")]
     disk: Option<usize>,
 
     /// Display all system information
