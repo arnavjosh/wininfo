@@ -40,6 +40,8 @@ struct Cli {
     /// Display disk information
     #[arg(short = 'd', long)]
     disks: bool,
+    #[arg(long, value_name = "INDEX")]
+    disk: Option<usize>,
 
     /// Display all system information
     #[arg(short = 'a', long)]
@@ -94,7 +96,7 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         return Ok(());
     }
 
-    if !cli.cpu && !cli.memory && !cli.disks && !cli.all {
+    if !cli.cpu && !cli.memory && !cli.disks && !cli.all && cli.disk.is_none() {
         return print_all(system, cli);
     }
 
@@ -122,14 +124,13 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         first = false;
     }
 
-    if cli.disks {
+    if cli.disks || cli.disk.is_some() {
         if !first && !cli.quiet {
             println!();
         }
 
         print_disks(system, cli)?;
     }
-
     Ok(())
 }
 
@@ -211,45 +212,17 @@ fn print_disks(system: &System, cli: &Cli) -> CliResult<()> {
         section_header("DISKS");
     }
 
-    if disks.is_empty() {
-        println!("  No disks wer e found.");
+    if let Some(index) = cli.disk {
+        let disk = disks
+            .get(index)
+            .ok_or_else(|| format!("Disk index {index} does not exist"))?;
 
-        if !cli.quiet {
-            println!();
-        }
-
+        print_disk(disk);
         return Ok(());
     }
 
-    for disk in disks {
-        println!();
-        println!("  {}", disk.device_id());
-
-        match (disk.size(), disk.free()) {
-            (Some(size), Some(free)) => {
-                let used = size.subtract(free).unwrap_or_default();
-                let usage_percent = percentage(used, size);
-
-                println!("  {:<12} {} bytes", "Used", used.as_u64());
-                println!("  {:<12} {} bytes", "Free", free.as_u64());
-                println!("  {:<12} {} bytes", "Total", size.as_u64());
-                println!("  {:<12} {:.1}%", "Usage", usage_percent);
-            }
-
-            (Some(size), None) => {
-                println!("  {:<12} {} bytes", "Total", size.as_u64());
-                println!("  {:<12} {}", "Free", "Unknown");
-            }
-
-            (None, Some(free)) => {
-                println!("  {:<12} {} bytes", "Free", free.as_u64());
-                println!("  {:<12} {}", "Total", "Unknown");
-            }
-
-            (None, None) => {
-                println!("  Disk capacity information unavailable.");
-            }
-        }
+    for disk in &disks {
+        print_disk(disk);
     }
 
     if !cli.quiet {
@@ -257,6 +230,34 @@ fn print_disks(system: &System, cli: &Cli) -> CliResult<()> {
     }
 
     Ok(())
+}
+
+fn print_disk(disk: &wininfo::DiskInfo) {
+    println!();
+    println!("  {}", disk.device_id());
+
+    match (disk.size(), disk.free()) {
+        (Some(size), Some(free)) => {
+            let used = size.subtract(free).unwrap_or_default();
+            let usage = percentage(used, size);
+
+            println!("  {:<12} {} bytes", "Used", used.as_u64());
+            println!("  {:<12} {} bytes", "Free", free.as_u64());
+            println!("  {:<12} {} bytes", "Total", size.as_u64());
+            println!("  {:<12} {:.1}%", "Usage", usage);
+        }
+        (Some(size), None) => {
+            println!("  {:<12} {} bytes", "Total", size.as_u64());
+            println!("  {:<12} Unknown", "Free");
+        }
+        (None, Some(free)) => {
+            println!("  {:<12} {} bytes", "Free", free.as_u64());
+            println!("  {:<12} Unknown", "Total");
+        }
+        (None, None) => {
+            println!("  Disk capacity information not available.");
+        }
+    }
 }
 
 fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
