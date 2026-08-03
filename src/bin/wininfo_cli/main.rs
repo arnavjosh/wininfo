@@ -281,9 +281,16 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
         output.insert("memory".to_owned(), serde_json::to_value(memory)?);
     }
 
-    if cli.disks {
-        let disks = system.disks()?;
-        output.insert("disks".to_owned(), serde_json::to_value(disks)?);
+    if let Some(index) = cli.disk {
+        let disk = system
+            .disks()?
+            .into_iter()
+            .nth(index)
+            .ok_or_else(|| format!("Disk index {index} does not exist"))?;
+
+        output.insert("disk".into(), serde_json::to_value(disk)?);
+    } else if cli.disks {
+        output.insert("disks".into(), serde_json::to_value(system.disks()?)?);
     }
 
     let json = serde_json::to_string_pretty(&Value::Object(output))?;
