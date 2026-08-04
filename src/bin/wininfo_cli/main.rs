@@ -25,7 +25,7 @@ type CliResult<T> = std::result::Result<T, Box<dyn Error>>;
 )]
 #[command(group(
     ArgGroup::new("info")
-        .args(["cpu", "memory", "disks", "all"])
+    .args(["cpu", "memory", "disks", "network", "all"])
         .multiple(true)
 ))]
 struct Cli {
@@ -40,8 +40,13 @@ struct Cli {
     /// Display disk information
     #[arg(short = 'd', long)]
     disks: bool,
-        #[arg(long, value_name = "INDEX|DRIVE", conflicts_with = "disks")]
-        disk: Option<String>,
+
+    /// Display network adapter information
+    #[arg(short = 'n', long)]
+    network: bool,
+
+    #[arg(long, value_name = "INDEX|DRIVE", conflicts_with = "disks")]
+    disk: Option<String>,
 
     /// Display all system information
     #[arg(short = 'a', long)]
@@ -68,6 +73,8 @@ enum Commands {
     Memory,
     /// Display disk information
     Disks,
+    /// Display network adapter information
+    Network,
     /// Display all system information
     Info,
 }
@@ -90,13 +97,14 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
             Commands::Cpu => print_cpu(system, cli)?,
             Commands::Memory => print_memory(system, cli)?,
             Commands::Disks => print_disks(system, cli)?,
+            Commands::Network => print_network(system, cli)?,
             Commands::Info => print_all(system, cli)?,
         }
 
         return Ok(());
     }
 
-    if !cli.cpu && !cli.memory && !cli.disks && !cli.all && cli.disk.is_none() {
+    if !cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.all && cli.disk.is_none() {
         return print_all(system, cli);
     }
 
@@ -130,6 +138,15 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         }
 
         print_disks(system, cli)?;
+        first = false;
+    }
+
+    if cli.network {
+        if !first && !cli.quiet {
+            println!();
+        }
+
+        print_network(system, cli)?;
     }
     Ok(())
 }
@@ -145,6 +162,7 @@ fn print_all(system: &System, cli: &Cli) -> CliResult<()> {
     print_cpu(system, cli)?;
     print_memory(system, cli)?;
     print_disks(system, cli)?;
+    print_network(system, cli)?;
 
     Ok(())
 }
@@ -173,6 +191,44 @@ fn print_cpu(system: &System, cli: &Cli) -> CliResult<()> {
         Some(speed) => println!("  {:<24} {:.2} GHz", "Max clock speed", speed),
         None => println!("  {:<24} {}", "Max clock speed", "Unknown"),
     }
+    if !cli.quiet {
+        println!();
+    }
+
+    Ok(())
+}
+
+fn print_network(system: &System, cli: &Cli) -> CliResult<()> {
+    let adapters = system.network_adapters()?;
+
+    if !cli.quiet {
+        section_header("NETWORK");
+    }
+
+    for adapter in &adapters {
+        println!();
+        println!("  {}", adapter.name());
+        println!(
+            "  {:<24} {}",
+            "MAC address",
+            adapter.mac_address().unwrap_or("Unknown")
+        );
+        println!(
+            "  {:<24} {}",
+            "IPv4 address",
+            adapter
+                .ipv4_address()
+                .map(|address| address.to_string())
+                .unwrap_or_else(|| "Unknown".to_string())
+        );
+        println!("  {:<24} {}", "Enabled", adapter.enabled());
+
+        match adapter.speed() {
+            Some(speed) => println!("  {:<24} {} bps", "Speed", speed),
+            None => println!("  {:<24} Unknown", "Speed"),
+        }
+    }
+
     if !cli.quiet {
         println!();
     }
@@ -213,7 +269,7 @@ fn print_disks(system: &System, cli: &Cli) -> CliResult<()> {
     }
 
     if let Some(index) = &cli.disk {
-           let disk = select_disk(&disks, &index)?;
+        let disk = select_disk(&disks, &index)?;
 
         print_disk(disk);
         return Ok(());
@@ -259,7 +315,7 @@ fn print_disk(disk: &wininfo::DiskInfo) {
 }
 
 fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
-    if cli.all || (!cli.cpu && !cli.memory && !cli.disks) {
+    if cli.all || (!cli.cpu && !cli.memory && !cli.disks && !cli.network) {
         let info = system.info()?;
 
         println!("{}", serde_json::to_string_pretty(&info)?);
@@ -280,12 +336,19 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
     }
 
     if let Some(index) = &cli.disk {
-            let disks = system.disks()?;
-            let disk = select_disk(&disks, &index)?;
+        let disks = system.disks()?;
+        let disk = select_disk(&disks, &index)?;
 
         output.insert("disk".into(), serde_json::to_value(disk)?);
     } else if cli.disks {
         output.insert("disks".into(), serde_json::to_value(system.disks()?)?);
+    }
+
+    if cli.network {
+        output.insert(
+            "network_adapters".into(),
+            serde_json::to_value(system.network_adapters()?)?,
+        );
     }
 
     let json = serde_json::to_string_pretty(&Value::Object(output))?;
@@ -294,7 +357,10 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
     Ok(())
 }
 
-fn select_disk<'a>(disks: &'a [wininfo::DiskInfo], selector: &str) -> CliResult<&'a wininfo::DiskInfo> {
+fn select_disk<'a>(
+    disks: &'a [wininfo::DiskInfo],
+    selector: &str,
+) -> CliResult<&'a wininfo::DiskInfo> {
     if let Ok(index) = selector.parse::<usize>() {
         return disks
             .get(index)
