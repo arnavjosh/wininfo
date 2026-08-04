@@ -99,7 +99,7 @@ struct Win32NetworkAdapter {
     net_enabled: Option<bool>,
 
     #[serde(rename = "Speed")]
-    speed: Option<String>,
+    speed: Option<u64>,
 
     #[serde(rename = "InterfaceIndex")]
     interface_index: Option<u32>,
@@ -169,14 +169,12 @@ pub(crate) fn network_adapters(wmi: &WMIConnection) -> Result<Vec<NetworkAdapter
         let ipv4_address = adapter
             .interface_index
             .and_then(|index| ipv4_by_interface_index.get(&index).copied());
-        let speed = adapter.speed.and_then(|speed| speed.parse::<u64>().ok());
-
         all_adapters.push(NetworkAdapterInfo::new(
             name,
             adapter.mac_address,
             ipv4_address,
             adapter.net_enabled.unwrap_or(false),
-            speed,
+            adapter.speed,
         ));
     }
 
