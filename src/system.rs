@@ -3,11 +3,7 @@ use serde::{Deserialize, Serialize};
 use wmi::{COMLibrary, WMIConnection};
 
 use crate::{
-    Result,
-    cpu::CpuInfo,
-    disk::DiskInfo,
-    error::WinInfoError,
-    memory::MemoryInfo,
+    Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo,
     network::NetworkAdapterInfo,
 };
 
