@@ -40,8 +40,8 @@ struct Cli {
     /// Display disk information
     #[arg(short = 'd', long)]
     disks: bool,
-    #[arg(long, value_name = "INDEX", conflicts_with = "disks")]
-    disk: Option<usize>,
+        #[arg(long, value_name = "INDEX|DRIVE", conflicts_with = "disks")]
+        disk: Option<String>,
 
     /// Display all system information
     #[arg(short = 'a', long)]
@@ -212,10 +212,8 @@ fn print_disks(system: &System, cli: &Cli) -> CliResult<()> {
         section_header("DISKS");
     }
 
-    if let Some(index) = cli.disk {
-        let disk = disks
-            .get(index)
-            .ok_or_else(|| format!("Disk index {index} does not exist"))?;
+    if let Some(index) = &cli.disk {
+           let disk = select_disk(&disks, &index)?;
 
         print_disk(disk);
         return Ok(());
@@ -281,12 +279,9 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
         output.insert("memory".to_owned(), serde_json::to_value(memory)?);
     }
 
-    if let Some(index) = cli.disk {
-        let disk = system
-            .disks()?
-            .into_iter()
-            .nth(index)
-            .ok_or_else(|| format!("Disk index {index} does not exist"))?;
+    if let Some(index) = &cli.disk {
+            let disks = system.disks()?;
+            let disk = select_disk(&disks, &index)?;
 
         output.insert("disk".into(), serde_json::to_value(disk)?);
     } else if cli.disks {
@@ -297,6 +292,28 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
     println!("{json}");
 
     Ok(())
+}
+
+fn select_disk<'a>(disks: &'a [wininfo::DiskInfo], selector: &str) -> CliResult<&'a wininfo::DiskInfo> {
+    if let Ok(index) = selector.parse::<usize>() {
+        return disks
+            .get(index)
+            .ok_or_else(|| format!("Disk index {index} does not exist"))
+            .map_err(Into::into);
+    }
+
+    let normalized_selector = normalize_drive_selector(selector);
+
+    disks
+        .iter()
+        .find(|disk| normalize_drive_selector(disk.device_id()) == normalized_selector)
+        .ok_or_else(|| format!("Disk {selector} does not exist"))
+        .map_err(Into::into)
+}
+
+fn normalize_drive_selector(selector: &str) -> String {
+    let trimmed = selector.trim().trim_end_matches(':');
+    trimmed.to_ascii_uppercase() + ":"
 }
 
 fn percentage(value: Byte, total: Byte) -> f64 {
