@@ -2,7 +2,14 @@ use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use wmi::{COMLibrary, WMIConnection};
 
-use crate::{Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo};
+use crate::{
+    Result,
+    cpu::CpuInfo,
+    disk::DiskInfo,
+    error::WinInfoError,
+    memory::MemoryInfo,
+    network::NetworkAdapterInfo,
+};
 
 pub struct System {
     #[cfg(windows)]
@@ -13,6 +20,7 @@ pub struct Info {
     pub disks: Vec<DiskInfo>,
     pub cpu: CpuInfo,
     pub memory: MemoryInfo,
+    pub network_adapters: Vec<NetworkAdapterInfo>,
 }
 
 impl System {
@@ -68,11 +76,24 @@ impl System {
         }
     }
 
+    pub fn network_adapters(&self) -> Result<Vec<NetworkAdapterInfo>> {
+        #[cfg(windows)]
+        {
+            crate::windows::network_adapters(&self.wmi)
+        }
+
+        #[cfg(not(windows))]
+        {
+            Err(WinInfoError::Unsupported)
+        }
+    }
+
     pub fn info(&self) -> Result<Info> {
         Ok(Info {
             disks: self.disks()?,
             cpu: self.cpu()?,
             memory: self.memory()?,
+            network_adapters: self.network_adapters()?,
         })
     }
 }

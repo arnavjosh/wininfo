@@ -12,6 +12,7 @@ mod cpu;
 mod disk;
 mod error;
 mod memory;
+mod network;
 mod system;
 
 #[cfg(windows)]
@@ -22,6 +23,7 @@ pub use cpu::CpuInfo;
 pub use disk::DiskInfo;
 pub use error::WinInfoError;
 pub use memory::MemoryInfo;
+pub use network::NetworkAdapterInfo;
 pub use system::System;
 
 pub type Result<T> = std::result::Result<T, WinInfoError>;
