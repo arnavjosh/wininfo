@@ -251,7 +251,10 @@ fn network_adapters(system: &System, cli: &Cli) -> CliResult<Vec<wininfo::Networ
     let adapters = system.network_adapters()?;
 
     if cli.only_enabled {
-        Ok(adapters.into_iter().filter(|adapter| adapter.enabled()).collect())
+        Ok(adapters
+            .into_iter()
+            .filter(|adapter| adapter.enabled())
+            .collect())
     } else {
         Ok(adapters)
     }
@@ -336,9 +339,7 @@ fn print_disk(disk: &wininfo::DiskInfo) {
 }
 
 fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
-    if cli.all
-        || (!cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.only_enabled)
-    {
+    if cli.all || (!cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.only_enabled) {
         let info = system.info()?;
 
         println!("{}", serde_json::to_string_pretty(&info)?);
