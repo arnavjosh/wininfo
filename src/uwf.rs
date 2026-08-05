@@ -1,3 +1,4 @@
+use byte_unit::Byte;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,7 +21,7 @@ impl UWFInfo {
         &self.enabled
     }
     pub fn total_size(&self) -> Option<Byte> {
-        &self.total_size
+        self.total_size
     }
     pub fn used_size(&self) -> Option<Byte> {
         self.used_size

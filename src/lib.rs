@@ -14,6 +14,7 @@ mod error;
 mod memory;
 mod network;
 mod system;
+mod uwf;
 
 #[cfg(windows)]
 mod windows;
