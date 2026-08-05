@@ -45,6 +45,10 @@ struct Cli {
     #[arg(short = 'n', long)]
     network: bool,
 
+    /// Show only enabled network adapters
+    #[arg(long = "only-enabled", global = true)]
+    only_enabled: bool,
+
     #[arg(long, value_name = "INDEX|DRIVE", conflicts_with = "disks")]
     disk: Option<String>,
 
@@ -104,7 +108,14 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         return Ok(());
     }
 
-    if !cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.all && cli.disk.is_none() {
+    if !cli.cpu
+        && !cli.memory
+        && !cli.disks
+        && !cli.network
+        && !cli.only_enabled
+        && !cli.all
+        && cli.disk.is_none()
+    {
         return print_all(system, cli);
     }
 
@@ -141,7 +152,7 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         first = false;
     }
 
-    if cli.network {
+    if cli.network || cli.only_enabled {
         if !first && !cli.quiet {
             println!();
         }
@@ -199,7 +210,7 @@ fn print_cpu(system: &System, cli: &Cli) -> CliResult<()> {
 }
 
 fn print_network(system: &System, cli: &Cli) -> CliResult<()> {
-    let adapters = system.network_adapters()?;
+    let adapters = network_adapters(system, cli)?;
 
     if !cli.quiet {
         section_header("NETWORK");
@@ -234,6 +245,16 @@ fn print_network(system: &System, cli: &Cli) -> CliResult<()> {
     }
 
     Ok(())
+}
+
+fn network_adapters(system: &System, cli: &Cli) -> CliResult<Vec<wininfo::NetworkAdapterInfo>> {
+    let adapters = system.network_adapters()?;
+
+    if cli.only_enabled {
+        Ok(adapters.into_iter().filter(|adapter| adapter.enabled()).collect())
+    } else {
+        Ok(adapters)
+    }
 }
 
 fn print_memory(system: &System, cli: &Cli) -> CliResult<()> {
@@ -315,7 +336,9 @@ fn print_disk(disk: &wininfo::DiskInfo) {
 }
 
 fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
-    if cli.all || (!cli.cpu && !cli.memory && !cli.disks && !cli.network) {
+    if cli.all
+        || (!cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.only_enabled)
+    {
         let info = system.info()?;
 
         println!("{}", serde_json::to_string_pretty(&info)?);
@@ -344,10 +367,10 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
         output.insert("disks".into(), serde_json::to_value(system.disks()?)?);
     }
 
-    if cli.network {
+    if cli.network || cli.only_enabled {
         output.insert(
             "network_adapters".into(),
-            serde_json::to_value(system.network_adapters()?)?,
+            serde_json::to_value(network_adapters(system, cli)?)?,
         );
     }
 
