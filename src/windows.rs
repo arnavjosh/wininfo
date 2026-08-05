@@ -6,7 +6,7 @@ use wmi::WMIConnection;
 
 use crate::{
     Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo,
-    network::NetworkAdapterInfo,
+    network::NetworkAdapterInfo, uwf::UWFInfo,
 };
 
 #[derive(Debug, Deserialize)]
@@ -194,4 +194,30 @@ struct UWFOverlay {
 struct UWFFilter {
     #[serde(rename = "CurrentEnabled")]
     current_enabled: bool,
+}
+
+pub(crate) fn uwf(wmi: &WMIConnection) -> Result<UWFInfo> {
+    let filters: Vec<UWFFilter> = wmi.raw_query("SELECT CurrentEnabled FROM UWF_Filter")?;
+
+    let enabled = filters
+        .first()
+        .map(|filter| filter.current_enabled)
+        .unwrap_or(false);
+
+    if !enabled {
+        return Ok(UWFInfo::new(false, None, None));
+    }
+    let overlays: Vec<UWFOverlay> = wmi.raw_query(
+        "SELECT OverlayConsumption, AvailableSpace \
+         FROM UWF_Overlay",
+    )?;
+
+    let overlay = overlays.first().ok_or(WinInfoError::Empty)?;
+    let used = Byte::from_u64(overlay.overlay_consumption as u64 * 1024 * 1024);
+
+    let total = Byte::from_u64(
+        (overlay.overlay_consumption + overlay.available_space) as u64 * 1024 * 1024,
+    );
+
+    Ok(UWFInfo::new(true, Some(total), Some(used)))
 }
