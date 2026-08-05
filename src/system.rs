@@ -10,6 +10,8 @@ use crate::{
 pub struct System {
     #[cfg(windows)]
     wmi: WMIConnection,
+    #[cfg(windows)]
+    uwf_wmi: Option<WMIConnection>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Info {
@@ -27,7 +29,12 @@ impl System {
             let com = COMLibrary::new().map_err(|_| WinInfoError::Com)?;
             let wmi = WMIConnection::new(com)?;
 
-            Ok(Self { wmi })
+            let uwf_com = COMLibrary::new().map_err(|_| WinInfoError::Com)?;
+
+            let uwf_wmi =
+                WMIConnection::with_namespace_path("ROOT\\StandardCimv2\\Embedded", uwf_com).ok();
+
+            Ok(Self { wmi, uwf_wmi })
         }
 
         #[cfg(not(windows))]
