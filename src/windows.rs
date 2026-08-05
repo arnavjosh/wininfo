@@ -180,3 +180,18 @@ pub(crate) fn network_adapters(wmi: &WMIConnection) -> Result<Vec<NetworkAdapter
 
     Ok(all_adapters)
 }
+
+#[derive(Debug, Deserialize)]
+struct UWFOverlay {
+    #[serde(rename = "OverlayConsumption")]
+    overlay_consumption: u32,
+
+    #[serde(rename = "AvailableSpace")]
+    available_space: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct UWFFilter {
+    #[serde(rename = "CurrentEnabled")]
+    current_enabled: bool,
+}
