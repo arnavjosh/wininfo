@@ -4,7 +4,7 @@ use wmi::{COMLibrary, WMIConnection};
 
 use crate::{
     Result, cpu::CpuInfo, disk::DiskInfo, error::WinInfoError, memory::MemoryInfo,
-    network::NetworkAdapterInfo,
+    network::NetworkAdapterInfo, uwf::UWFInfo,
 };
 
 pub struct System {
@@ -98,5 +98,20 @@ impl System {
             memory: self.memory()?,
             network_adapters: self.network_adapters()?,
         })
+    }
+
+    pub fn uwf(&self) -> Result<UWFInfo> {
+        #[cfg(windows)]
+        {
+            match &self.uwf_wmi {
+                Some(wmi) => crate::windows::uwf(wmi),
+                None => Ok(UWFInfo::new(false, None, None)),
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            Err(WinInfoError::Unsupported)
+        }
     }
 }
