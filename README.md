@@ -114,6 +114,7 @@ Use either flags or subcommands:
 
 - `wininfo_cli` prints a full system snapshot by default.
 - `wininfo_cli --cpu`, `--memory`, `--disks`, `--network`, `--disk 0`, and `--all` select specific sections.
+- `wininfo_cli --only-enabled --network` shows only enabled network adapters.
 - `wininfo_cli cpu`, `memory`, `disks`, `network`, and `info` provide the same data through subcommands.
 - `wininfo_cli --json` prints structured JSON output.
 - `wininfo_cli --quiet` suppresses section headers and extra spacing.
@@ -126,6 +127,7 @@ cargo run --bin wininfo_cli -- memory
 cargo run --bin wininfo_cli -- --all --json
 cargo run --bin wininfo_cli -- --disk 0
 cargo run --bin wininfo_cli -- --network
+cargo run --bin wininfo_cli -- --network --only-enabled
 ```
 
 ## License
