@@ -26,5 +26,6 @@ pub use error::WinInfoError;
 pub use memory::MemoryInfo;
 pub use network::NetworkAdapterInfo;
 pub use system::System;
+pub use uwf::UWFInfo;
 
 pub type Result<T> = std::result::Result<T, WinInfoError>;
