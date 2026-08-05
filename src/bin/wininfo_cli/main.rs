@@ -25,7 +25,7 @@ type CliResult<T> = std::result::Result<T, Box<dyn Error>>;
 )]
 #[command(group(
     ArgGroup::new("info")
-    .args(["cpu", "memory", "disks", "network", "all"])
+    .args(["cpu", "memory", "disks", "network", "uwf", "all"])
         .multiple(true)
 ))]
 struct Cli {
@@ -44,6 +44,10 @@ struct Cli {
     /// Display network adapter information
     #[arg(short = 'n', long)]
     network: bool,
+
+    /// Display Unified Write Filter information
+    #[arg(short = 'u', long)]
+    uwf: bool,
 
     /// Show only enabled network adapters
     #[arg(long = "only-enabled", global = true)]
@@ -79,6 +83,8 @@ enum Commands {
     Disks,
     /// Display network adapter information
     Network,
+    /// Display UWF information
+    Uwf,
     /// Display all system information
     Info,
 }
@@ -102,6 +108,7 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
             Commands::Memory => print_memory(system, cli)?,
             Commands::Disks => print_disks(system, cli)?,
             Commands::Network => print_network(system, cli)?,
+            Commands::Uwf => print_uwf(system, cli)?,
             Commands::Info => print_all(system, cli)?,
         }
 
@@ -112,6 +119,7 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
         && !cli.memory
         && !cli.disks
         && !cli.network
+        && !cli.uwf
         && !cli.only_enabled
         && !cli.all
         && cli.disk.is_none()
@@ -159,6 +167,14 @@ fn run_once(system: &System, cli: &Cli) -> CliResult<()> {
 
         print_network(system, cli)?;
     }
+
+    if cli.uwf {
+        if !first && !cli.quiet {
+            println!();
+        }
+
+        print_uwf(system, cli)?;
+    }
     Ok(())
 }
 
@@ -174,6 +190,7 @@ fn print_all(system: &System, cli: &Cli) -> CliResult<()> {
     print_memory(system, cli)?;
     print_disks(system, cli)?;
     print_network(system, cli)?;
+    print_uwf(system, cli)?;
 
     Ok(())
 }
@@ -310,6 +327,48 @@ fn print_disks(system: &System, cli: &Cli) -> CliResult<()> {
     Ok(())
 }
 
+fn print_uwf(system: &System, cli: &Cli) -> CliResult<()> {
+    let uwf = system.uwf()?;
+
+    if !cli.quiet {
+        section_header("UWF");
+    }
+
+    println!("  {:<24} {}", "Enabled", uwf.enabled());
+
+    if !uwf.enabled() {
+        if !cli.quiet {
+            println!();
+        }
+        return Ok(());
+    }
+    match (uwf.total_size(), uwf.used_size()) {
+        (Some(total), Some(used)) => {
+            let usage = percentage(used, total);
+
+            println!("  {:<24} {} bytes", "Used", used.as_u64());
+            println!("  {:<24} {} bytes", "Total", total.as_u64());
+            println!("  {:<24} {:.1}%", "Usage", usage);
+        }
+        (Some(total), None) => {
+            println!("  {:<24} {} bytes", "Total", total.as_u64());
+            println!("  {:<24} Unknown", "Used");
+        }
+        (None, Some(used)) => {
+            println!("  {:<24} {} bytes", "Used", used.as_u64());
+            println!("  {:<24} Unknown", "Total");
+        }
+        (None, None) => {
+            println!("  UWF overlay size information not available.");
+        }
+    }
+    if !cli.quiet {
+        println!();
+    }
+
+    Ok(())
+}
+
 fn print_disk(disk: &wininfo::DiskInfo) {
     println!();
     println!("  {}", disk.device_id());
@@ -339,10 +398,16 @@ fn print_disk(disk: &wininfo::DiskInfo) {
 }
 
 fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
-    if cli.all || (!cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.only_enabled) {
-        let info = system.info()?;
+    if cli.all
+        || (!cli.cpu && !cli.memory && !cli.disks && !cli.network && !cli.only_enabled && !cli.uwf)
+    {
+        // Build the full info object including uwf
+        let mut info_value = serde_json::to_value(system.info()?)?;
+        if let Some(map) = info_value.as_object_mut() {
+            map.insert("uwf".into(), serde_json::to_value(system.uwf()?)?);
+        }
 
-        println!("{}", serde_json::to_string_pretty(&info)?);
+        println!("{}", serde_json::to_string_pretty(&info_value)?);
 
         return Ok(());
     }
@@ -373,6 +438,10 @@ fn print_json(system: &System, cli: &Cli) -> CliResult<()> {
             "network_adapters".into(),
             serde_json::to_value(network_adapters(system, cli)?)?,
         );
+    }
+
+    if cli.uwf {
+        output.insert("uwf".into(), serde_json::to_value(system.uwf()?)?);
     }
 
     let json = serde_json::to_string_pretty(&Value::Object(output))?;
